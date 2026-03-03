@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>8085 Traning Kit Simulation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600&family=Inter:wght@400;700&family=JetBrains+Mono:wght@500&display=swap');
+
+        :root {
+            --bg-main: #0a0c0b;
+            --panel-bg: #121514;
+            --btn-blue: #1a73e8;
+            --btn-dark: #202124;
+            --btn-orange: #d94e18;
+            --text-neon: #ff2e2e;
+            --status-gold: #ffcc00;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: white;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .trainer-case {
+            background-color: var(--panel-bg);
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 50px 100px rgba(0,0,0,0.9);
+            border: 1px solid #2a2a2a;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            width: 900px;
+        }
+
+        /* 1:1 DISPLAY REPLICA */
+        .display-section {
+            background: #000;
+            height: 140px;
+            border-radius: 12px;
+            border: 2px solid #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: inset 0 0 40px rgba(0,0,0,1);
+        }
+
+        .led-digits {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--text-neon);
+            font-size: 64px;
+            letter-spacing: 15px;
+            text-shadow: 0 0 20px rgba(255, 46, 46, 0.4);
+        }
+
+        /* STATUS HUD */
+        .status-hud {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid #333;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            color: var(--status-gold);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+
+        /* KEYPADS */
+        .keypads {
+            display: flex;
+            gap: 20px;
+        }
+
+        .grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .grid-blue { grid-template-columns: repeat(3, 1fr); }
+        .grid-hex { grid-template-columns: repeat(4, 1fr); }
+
+        .btn {
+            width: 75px;
+            height: 65px;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 700;
+            font-size: 11px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: 0.1s;
+        }
+
+        .btn:active { transform: translateY(3px); filter: brightness(1.2); }
+        .btn span { font-size: 9px; opacity: 0.7; margin-top: 2px; }
+
+        .btn-blue { background: var(--btn-blue); box-shadow: 0 5px 0 #0d47a1; }
+        .btn-dark { background: var(--btn-dark); box-shadow: 0 5px 0 #000; }
+        .btn-orange { background: var(--btn-orange); box-shadow: 0 5px 0 #8c320f; }
+
+        /* CPU STATE PANEL */
+        .state-panel {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #333;
+        }
+
+        .state-title { font-size: 12px; color: #666; margin-bottom: 15px; }
+
+        .reg-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            border-bottom: 1px solid #222;
+            padding-bottom: 5px;
+        }
+
+        .reg-row span { color: #888; }
+
+        .clear-ram {
+            width: 100%;
+            padding: 10px;
+            background: #3d1414;
+            border: none;
+            color: #ff5252;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 15px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+
+<div class="trainer-case">
+    <div class="display-section">
+        <div class="led-digits" id="main-led">- 5Cb 85</div>
+    </div>
+
+    <div class="status-hud" id="hud">SYSTEM READY - RESET TO START</div>
+
+    <div class="main-layout">
+        <div class="keypads">
+            <div class="grid grid-blue">
+                <button class="btn btn-blue" onclick="op('RESET')">RESET</button>
+                <button class="btn btn-blue">VCT<br>INT</button>
+                <button class="btn btn-blue">SHIFT</button>
+                
+                <button class="btn btn-blue">EXREG<br><span>SI</span></button>
+                <button class="btn btn-blue" onclick="op('EXMEM')">INS<br><span>DATA</span></button>
+                <button class="btn btn-blue">DEL<br><span>DATA</span></button>
+                
+                <button class="btn btn-blue" onclick="op('GO')">GO</button>
+                <button class="btn btn-blue">B.M</button>
+                <button class="btn btn-blue" onclick="op('REL')">REL<br><span>EXMEM</span></button>
+                
+                <button class="btn btn-blue">STRING<br><span>PRE</span></button>
+                <button class="btn btn-blue" onclick="op('NEXT')">MEMC<br><span>NEXT</span></button>
+                <button class="btn btn-orange" onclick="op('EXEC')">FILL</button>
+            </div>
+
+            <div class="grid grid-hex">
+                <button class="btn btn-dark" onclick="hex('C')">C</button>
+                <button class="btn btn-dark" onclick="hex('D')">D</button>
+                <button class="btn btn-dark" onclick="hex('E')">E</button>
+                <button class="btn btn-dark" onclick="hex('F')">F</button>
+                
+                <button class="btn btn-dark" onclick="hex('8')">8<br><span>H</span></button>
+                <button class="btn btn-dark" onclick="hex('9')">9<br><span>L</span></button>
+                <button class="btn btn-dark" onclick="hex('A')">A</button>
+                <button class="btn btn-dark" onclick="hex('B')">B</button>
+                
+                <button class="btn btn-dark" onclick="hex('4')">4<br><span>PCH</span></button>
+                <button class="btn btn-dark" onclick="hex('5')">5<br><span>PCL</span></button>
+                <button class="btn btn-dark" onclick="hex('6')">6<br><span>SPH</span></button>
+                <button class="btn btn-dark" onclick="hex('7')">7<br><span>SPL</span></button>
+                
+                <button class="btn btn-dark" onclick="hex('0')">0</button>
+                <button class="btn btn-dark" onclick="hex('1')">1</button>
+                <button class="btn btn-dark" onclick="hex('2')">2<br><span>SER</span></button>
+                <button class="btn btn-dark" onclick="hex('3')">3</button>
+            </div>
+        </div>
+
+        <div class="state-panel">
+            <div class="state-title">CPU STATE</div>
+            <div class="reg-row"><span>A</span><b id="r-a">00</b></div>
+            <div class="reg-row"><span>B</span><b id="r-b">00</b></div>
+            <div class="reg-row"><span>C</span><b id="r-c">00</b></div>
+            <div class="reg-row"><span>H</span><b id="r-h">00</b></div>
+            <div class="reg-row"><span>L</span><b id="r-l">00</b></div>
+            <div class="reg-row"><span>FLAGS</span><b id="r-f">00</b></div>
+            <div class="reg-row"><span>PC</span><b id="r-pc">2000</b></div>
+            <button class="clear-ram" onclick="clearAll()">CLEAR RAM</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let ram = new Uint8Array(65536);
+    let cpu = { a:0, b:0, c:0, h:0, l:0, f:0, pc:0x2000 };
+    let mode = "BOOT"; // BOOT, SET_ADDR, EDITING, GO_SET
+    let buffer = "";
+    let activeAddr = 0x2000;
+
+    const opcodes = {'3E':'MVI A','06':'MVI B','80':'ADD B','32':'STA','76':'HLT'};
+
+    function update() {
+        const led = document.getElementById('main-led');
+        const hud = document.getElementById('hud');
+
+        if(mode === "BOOT") {
+            led.innerText = "- 5Cb 85";
+            hud.innerText = "SYSTEM READY - RESET TO START";
+        } else if(mode === "SET_ADDR" || mode === "GO_SET") {
+            led.innerText = buffer.padEnd(4, ".").padStart(4, "0") + "  ";
+            hud.innerText = mode === "SET_ADDR" ? "ENTER ADDRESS FOR MEMORY" : "ENTER START ADDRESS FOR GO";
+        } else {
+            let a = activeAddr.toString(16).toUpperCase().padStart(4, "0");
+            let d = ram[activeAddr].toString(16).toUpperCase().padStart(2, "0");
+            led.innerText = `${a} ${d}`;
+            hud.innerText = `EDITING MEMORY | MNEM: ${opcodes[d] || "--"}`;
+        }
+
+        // Update Panel
+        document.getElementById('r-a').innerText = cpu.a.toString(16).toUpperCase().padStart(2, "0");
+        document.getElementById('r-b').innerText = cpu.b.toString(16).toUpperCase().padStart(2, "0");
+        document.getElementById('r-pc').innerText = activeAddr.toString(16).toUpperCase().padStart(4, "0");
+    }
+
+    function hex(v) {
+        if(mode === "BOOT") return;
+        buffer += v;
+        if(mode === "SET_ADDR" || mode === "GO_SET") {
+            if(buffer.length > 4) buffer = buffer.slice(-4);
+        } else {
+            if(buffer.length > 2) buffer = buffer.slice(-2);
+            ram[activeAddr] = parseInt(buffer, 16);
+        }
+        update();
+    }
+
+    function op(cmd) {
+        if(cmd === 'RESET') { mode = "BOOT"; buffer = ""; activeAddr = 0x2000; }
+        else if(cmd === 'EXMEM') { mode = "SET_ADDR"; buffer = ""; }
+        else if(cmd === 'GO') { mode = "GO_SET"; buffer = ""; }
+        else if(cmd === 'NEXT') {
+            if(mode === "SET_ADDR") { activeAddr = parseInt(buffer || "2000", 16); mode = "EDITING"; }
+            else if(mode === "EDITING") activeAddr = (activeAddr + 1) & 0xFFFF;
+            buffer = "";
+        } else if(cmd === 'EXEC') {
+            if(mode === "GO_SET") {
+                cpu.pc = parseInt(buffer, 16);
+                run(cpu.pc);
+                mode = "BOOT";
+                alert("EXECUTION COMPLETE");
+            }
+        }
+        update();
+    }
+
+    function run(start) {
+        cpu.pc = start;
+        let limit = 0;
+        while(limit < 500) {
+            let op = ram[cpu.pc++];
+            if(op === 0x3E) cpu.a = ram[cpu.pc++];
+            else if(op === 0x06) cpu.b = ram[cpu.pc++];
+            else if(op === 0x80) cpu.a = (cpu.a + cpu.b) & 0xFF;
+            else if(op === 0x32) { let l=ram[cpu.pc++]; let h=ram[cpu.pc++]; ram[(h<<8)|l] = cpu.a; }
+            else if(op === 0x76) break;
+            limit++;
+        }
+        activeAddr = cpu.pc - 1;
+    }
+
+    function clearAll() { ram.fill(0); update(); }
+    update();
+</script>
+</body>
+</html>
