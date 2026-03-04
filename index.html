@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>8085 Pro Trainer - Mobile Compatible</title>
+    <title>8085 SIMULATOR </title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600&family=Inter:wght@400;700&family=JetBrains+Mono:wght@500&display=swap');
 
@@ -176,12 +176,12 @@
                 <button class="btn btn-blue">SHIFT</button>
                 
                 <button class="btn btn-blue">EXREG<br><span>SI</span></button>
-                <button class="btn btn-blue" onclick="op('EXMEM')">INS<br><span>DATA</span></button>
+                <button class="btn btn-blue">INS<br><span>DATA</span></button>
                 <button class="btn btn-blue">DEL<br><span>DATA</span></button>
                 
                 <button class="btn btn-blue" onclick="op('GO')">GO</button>
                 <button class="btn btn-blue">B.M</button>
-                <button class="btn btn-blue" onclick="op('REL')">REL<br><span>EXMEM</span></button>
+                <button class="btn btn-blue" onclick="op('REL_EXMEM')">REL<br><span>EXMEM</span></button>
                 
                 <button class="btn btn-blue">STRING<br><span>PRE</span></button>
                 <button class="btn btn-blue" onclick="op('NEXT')">MEMC<br><span>NEXT</span></button>
@@ -227,81 +227,130 @@
 
 <script>
     let ram = new Uint8Array(65536);
-    let cpu = { a:0, b:0, c:0, h:0, l:0, f:0, pc:0x2000 };
-    let mode = "BOOT"; 
-    let buffer = "";
-    let activeAddr = 0x2000;
+    let cpu = { a:0, b:0, c:0, h:0, l:0, pc:0x2000, cy:0 };
+    let state = "BOOT";
+    let addrBuffer = "";
+    let dataBuffer = "";
+    let currentAddr = 0x2000;
 
-    const opcodes = {'3E':'MVI A','06':'MVI B','80':'ADD B','32':'STA','76':'HLT'};
+    const opNames = {
+        0x3A: 'LDA', 0x47: 'MOV B,A', 0x80: 'ADD B',
+        0x32: 'STA', 0xD2: 'JNC', 0x3E: 'MVI A',
+        0xC3: 'JMP', 0x76: 'HLT', 0x06: 'MVI B'
+    };
 
     function update() {
         const led = document.getElementById('main-led');
         const hud = document.getElementById('hud');
 
-        if(mode === "BOOT") {
+        if (state === "BOOT") {
             led.innerText = "- 5Cb 85";
-            hud.innerText = "SYSTEM READY - RESET TO START";
-        } else if(mode === "SET_ADDR" || mode === "GO_SET") {
-            led.innerText = buffer.padEnd(4, ".").padStart(4, "0") + "  ";
-            hud.innerText = mode === "SET_ADDR" ? "ENTER ADDRESS FOR MEMORY" : "ENTER START ADDRESS FOR GO";
-        } else {
-            let a = activeAddr.toString(16).toUpperCase().padStart(4, "0");
-            let d = ram[activeAddr].toString(16).toUpperCase().padStart(2, "0");
-            led.innerText = `${a} ${d}`;
-            hud.innerText = `EDITING MEMORY | MNEM: ${opcodes[d] || "--"}`;
+            hud.innerText = "SYSTEM READY - PRESS REL EXMEM TO EDIT";
+        } else if (state === "ADDR_WAIT") {
+            led.innerText = (addrBuffer.padEnd(4, "-")) + "  .";
+            hud.innerText = "ENTER MEMORY ADDRESS + PRESS MEMC NEXT";
+        } else if (state === "GO_WAIT") {
+            led.innerText = (addrBuffer.padEnd(4, "-")) + "  .";
+            hud.innerText = "ENTER START ADDRESS + PRESS FILL TO EXECUTE";
+        } else if (state === "DATA_EDIT") {
+            let a = currentAddr.toString(16).toUpperCase().padStart(4, "0");
+            let d = dataBuffer !== "" ? dataBuffer.padStart(2, "0") : ram[currentAddr].toString(16).toUpperCase().padStart(2, "0");
+            led.innerText = `${a}  ${d}`;
+            
+            let opHex = ram[currentAddr];
+            hud.innerText = `EDITING MEMORY | MNEMONIC: ${opNames[opHex] || "--"}`;
         }
 
+        // Update CPU state panel
         document.getElementById('r-a').innerText = cpu.a.toString(16).toUpperCase().padStart(2, "0");
         document.getElementById('r-b').innerText = cpu.b.toString(16).toUpperCase().padStart(2, "0");
-        document.getElementById('r-pc').innerText = activeAddr.toString(16).toUpperCase().padStart(4, "0");
+        document.getElementById('r-pc').innerText = cpu.pc.toString(16).toUpperCase().padStart(4, "0");
+        document.getElementById('r-f').innerText = (cpu.cy ? "CY=1" : "CY=0");
     }
 
     function hex(v) {
-        if(mode === "BOOT") return;
-        buffer += v;
-        if(mode === "SET_ADDR" || mode === "GO_SET") {
-            if(buffer.length > 4) buffer = buffer.slice(-4);
-        } else {
-            if(buffer.length > 2) buffer = buffer.slice(-2);
-            ram[activeAddr] = parseInt(buffer, 16);
+        if (state === "BOOT") return;
+        
+        if (state === "ADDR_WAIT" || state === "GO_WAIT") {
+            addrBuffer += v;
+            if (addrBuffer.length > 4) addrBuffer = addrBuffer.slice(-4);
+        } else if (state === "DATA_EDIT") {
+            dataBuffer += v;
+            if (dataBuffer.length > 2) dataBuffer = dataBuffer.slice(-2);
+            ram[currentAddr] = parseInt(dataBuffer, 16);
         }
         update();
     }
 
     function op(cmd) {
-        if(cmd === 'RESET') { mode = "BOOT"; buffer = ""; activeAddr = 0x2000; }
-        else if(cmd === 'EXMEM') { mode = "SET_ADDR"; buffer = ""; }
-        else if(cmd === 'GO') { mode = "GO_SET"; buffer = ""; }
-        else if(cmd === 'NEXT') {
-            if(mode === "SET_ADDR") { activeAddr = parseInt(buffer || "2000", 16); mode = "EDITING"; }
-            else if(mode === "EDITING") activeAddr = (activeAddr + 1) & 0xFFFF;
-            buffer = "";
-        } else if(cmd === 'EXEC') {
-            if(mode === "GO_SET") {
-                cpu.pc = parseInt(buffer, 16);
-                run(cpu.pc);
-                mode = "BOOT";
-                alert("EXECUTION COMPLETE");
+        if (cmd === 'RESET') {
+            state = "BOOT";
+            addrBuffer = "";
+            dataBuffer = "";
+        } else if (cmd === 'REL_EXMEM') {
+            state = "ADDR_WAIT";
+            addrBuffer = "";
+        } else if (cmd === 'NEXT') {
+            if (state === "ADDR_WAIT") {
+                currentAddr = parseInt(addrBuffer || "2000", 16);
+                state = "DATA_EDIT";
+                dataBuffer = "";
+            } else if (state === "DATA_EDIT") {
+                currentAddr = (currentAddr + 1) & 0xFFFF;
+                dataBuffer = "";
+            }
+        } else if (cmd === 'GO') {
+            state = "GO_WAIT";
+            addrBuffer = "";
+        } else if (cmd === 'EXEC') { 
+            if (state === "GO_WAIT") {
+                let startAddr = parseInt(addrBuffer || "2000", 16);
+                runProgram(startAddr);
+                state = "BOOT";
+                update();
+                setTimeout(() => alert("EXECUTION COMPLETE. Press REL EXMEM to check results."), 100);
             }
         }
         update();
     }
 
-    function run(start) {
+    function runProgram(start) {
         cpu.pc = start;
+        cpu.cy = 0; 
         let limit = 0;
-        while(limit < 500) {
-            let o = ram[cpu.pc++];
-            if(o === 0x3E) cpu.a = ram[cpu.pc++];
-            else if(o === 0x06) cpu.b = ram[cpu.pc++];
-            else if(o === 0x80) cpu.a = (cpu.a + cpu.b) & 0xFF;
-            else if(o === 0x32) { let l=ram[cpu.pc++]; let h=ram[cpu.pc++]; ram[(h<<8)|l] = cpu.a; }
-            else if(o === 0x76) break;
+        
+        while(limit < 1000) {
+            let currOp = ram[cpu.pc++];
+            
+            if (currOp === 0x76) { // HLT
+                break;
+            } else if (currOp === 0x3A) { // LDA
+                let l = ram[cpu.pc++]; let h = ram[cpu.pc++];
+                cpu.a = ram[(h << 8) | l];
+            } else if (currOp === 0x47) { // MOV B,A
+                cpu.b = cpu.a;
+            } else if (currOp === 0x80) { // ADD B
+                let sum = cpu.a + cpu.b;
+                if (sum > 255) { cpu.cy = 1; } else { cpu.cy = 0; }
+                cpu.a = sum & 0xFF;
+            } else if (currOp === 0x32) { // STA
+                let l = ram[cpu.pc++]; let h = ram[cpu.pc++];
+                ram[(h << 8) | l] = cpu.a;
+            } else if (currOp === 0xD2) { // JNC
+                let l = ram[cpu.pc++]; let h = ram[cpu.pc++];
+                if (cpu.cy === 0) { cpu.pc = (h << 8) | l; }
+            } else if (currOp === 0x3E) { // MVI A
+                cpu.a = ram[cpu.pc++];
+            } else if (currOp === 0xC3) { // JMP
+                let l = ram[cpu.pc++]; let h = ram[cpu.pc++];
+                cpu.pc = (h << 8) | l;
+            } else if (currOp === 0x06) { // MVI B
+                cpu.b = ram[cpu.pc++];
+            }
             limit++;
         }
-        activeAddr = cpu.pc - 1;
     }
-
+    
     function clearAll() { ram.fill(0); update(); }
     update();
 </script>
