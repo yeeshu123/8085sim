@@ -32,19 +32,19 @@
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            padding: clamp(5px, 2vw, 10px);
+            padding: clamp(5px, 1.5vw, 10px);
             overflow-x: hidden;
         }
 
         .trainer-case {
             background-color: var(--panel-bg);
-            padding: clamp(15px, 4vw, 40px);
-            border-radius: clamp(16px, 4vw, 24px);
+            padding: clamp(10px, 3vw, 30px);
+            border-radius: clamp(12px, 3vw, 24px);
             box-shadow: 0 20px 50px rgba(0,0,0,0.9);
             border: 1px solid #2a2a2a;
             display: flex;
             flex-direction: column;
-            gap: clamp(12px, 2vh, 20px);
+            gap: clamp(8px, 1.5vh, 16px);
             width: 100%;
             max-width: 900px;
         }
@@ -85,7 +85,8 @@
 
         .display-section {
             background: #000;
-            height: clamp(60px, 12vh, 100px);
+            /* Slightly reduced max height so it leaves space for buttons on mobile */
+            height: clamp(50px, 9vh, 90px);
             border-radius: 12px;
             border: 2px solid #333;
             display: flex;
@@ -96,7 +97,7 @@
         }
 
         .led-digits {
-            font-family: 'DSEG7 Classic', monospace; /* Changed to 7-segment font */
+            font-family: 'DSEG7 Classic', monospace;
             color: var(--text-neon);
             font-size: clamp(22px, 6vw, 54px);
             letter-spacing: clamp(2px, 1vw, 10px);
@@ -120,35 +121,36 @@
         .main-layout {
             display: grid;
             grid-template-columns: 1fr;
-            gap: clamp(12px, 2vh, 20px);
+            gap: clamp(8px, 1.5vh, 16px);
         }
 
         @media (min-width: 800px) {
-            .display-section { height: 140px; }
+            .display-section { height: 120px; }
         }
 
         .keypads {
             display: flex;
             flex-direction: column;
-            gap: clamp(12px, 2vh, 20px);
+            gap: clamp(8px, 1.5vh, 16px);
         }
 
         @media (min-width: 600px) {
             .keypads { flex-direction: row; }
         }
 
-        .grid { display: grid; gap: clamp(6px, 1.5vw, 10px); flex: 1; }
+        .grid { display: grid; gap: clamp(5px, 1vw, 10px); flex: 1; }
         .grid-blue { grid-template-columns: repeat(3, 1fr); }
         .grid-hex { grid-template-columns: repeat(4, 1fr); }
 
         .btn {
-            height: clamp(55px, 8.5vh, 70px);
+            /* Kept height medium to ensure all 8 rows easily fit on mobile */
+            height: clamp(40px, 5.5vh, 60px);
             border: none;
             border-radius: 8px;
             color: white;
             font-weight: 700;
-            /* Increased text sizes for better mobile visibility */
-            font-size: clamp(13px, 3.5vw, 16px);
+            /* Made texts, especially numbers, significantly larger */
+            font-size: clamp(16px, 4.5vw, 22px);
             cursor: pointer;
             display: flex;
             flex-direction: column;
@@ -160,14 +162,13 @@
         }
 
         .btn:active { transform: translateY(3px); filter: brightness(1.2); }
-        /* Increased secondary span text sizes */
-        .btn span { font-size: clamp(10px, 2.5vw, 12px); opacity: 0.7; margin-top: 4px; }
+        /* Secondary texts remain legible but out of the way */
+        .btn span { font-size: clamp(9px, 2.2vw, 11px); opacity: 0.7; margin-top: 2px; }
 
         .btn-blue { background: var(--btn-blue); box-shadow: 0 5px 0 #0d47a1; }
         .btn-dark { background: var(--btn-dark); box-shadow: 0 5px 0 #000; }
         .btn-orange { background: var(--btn-orange); box-shadow: 0 5px 0 #8c320f; }
 
-        /* Modified to act as a floating popup */
         .state-panel {
             position: fixed;
             top: 50%;
@@ -225,7 +226,6 @@
             border-radius: 4px;
         }
 
-        /* Overlays for Modals */
         .overlay {
             display: none;
             position: fixed;
@@ -234,7 +234,6 @@
             z-index: 999;
         }
 
-        /* What's New Popup Styles */
         #whats-new-modal {
             display: none;
             position: fixed;
@@ -356,7 +355,6 @@
 </div>
 
 <script>
-    // What's New Logic
     window.onload = function() {
         if (!localStorage.getItem('8085_whatsnew_seen_v2')) {
             document.getElementById('whats-new-overlay').style.display = 'block';
@@ -432,7 +430,6 @@
         0xE6: 'ANI', 0xF6: 'ORI', 0xC5: 'PUSH B', 0xC1: 'POP B', 0xD5: 'PUSH D', 0xD1: 'POP D', 0xE5: 'PUSH H', 0xE1: 'POP H', 0xF5: 'PUSH PSW', 0xF1: 'POP PSW'
     };
 
-    // Helper to determine instruction length for hinting logic
     function getInstructionLength(op) {
         if ([0x01, 0x11, 0x21, 0x31, 0x32, 0x3A, 0x22, 0x2A, 0xC3, 0xCA, 0xC2, 0xDA, 0xD2, 0xCD, 0xCC, 0xD4, 0xC4, 0xDC, 0xE4, 0xEC, 0xF4, 0xFC].includes(op)) return 3;
         if ((op & 0xC7) === 0x06) return 2; 
@@ -489,7 +486,6 @@
             led.innerText = `${a}  ${d}`;
             let opHex = ram[currentAddr];
 
-            // --- Determine if the current address expects Data for an Instruction ---
             let curr = 0x2000;
             let isData = false;
             let parentOp = null;
