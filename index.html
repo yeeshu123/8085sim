@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>8085 SIMULATOR</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600&family=Inter:wght@400;700&family=JetBrains+Mono:wght@500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=JetBrains+Mono:wght@500&display=swap');
+        @import url('https://fonts.cdnfonts.com/css/dseg7-classic');
 
         * {
             box-sizing: border-box;
@@ -91,14 +92,15 @@
             justify-content: center;
             align-items: center;
             box-shadow: inset 0 0 40px rgba(0,0,0,1);
+            padding: 0 20px;
         }
 
         .led-digits {
-            font-family: 'Orbitron', sans-serif;
+            font-family: 'DSEG7 Classic', monospace; /* Changed to 7-segment font */
             color: var(--text-neon);
-            font-size: clamp(24px, 7vw, 64px);
-            letter-spacing: clamp(3px, 1.5vw, 15px);
-            text-shadow: 0 0 20px rgba(255, 46, 46, 0.4);
+            font-size: clamp(22px, 6vw, 54px);
+            letter-spacing: clamp(2px, 1vw, 10px);
+            text-shadow: 0 0 20px rgba(255, 46, 46, 0.6);
             white-space: pre;
         }
 
@@ -110,7 +112,7 @@
             text-align: center;
             color: var(--status-gold);
             font-family: 'JetBrains Mono', monospace;
-            font-size: clamp(9px, 2.5vw, 12px);
+            font-size: clamp(10px, 2.5vw, 12px);
             letter-spacing: 1px;
             text-transform: uppercase;
         }
@@ -122,7 +124,6 @@
         }
 
         @media (min-width: 800px) {
-            .main-layout { grid-template-columns: 2fr 1fr; }
             .display-section { height: 140px; }
         }
 
@@ -141,12 +142,13 @@
         .grid-hex { grid-template-columns: repeat(4, 1fr); }
 
         .btn {
-            height: clamp(45px, 7.5vh, 60px);
+            height: clamp(55px, 8.5vh, 70px);
             border: none;
             border-radius: 8px;
             color: white;
             font-weight: 700;
-            font-size: clamp(9px, 2.5vw, 11px);
+            /* Increased text sizes for better mobile visibility */
+            font-size: clamp(13px, 3.5vw, 16px);
             cursor: pointer;
             display: flex;
             flex-direction: column;
@@ -158,27 +160,55 @@
         }
 
         .btn:active { transform: translateY(3px); filter: brightness(1.2); }
-        .btn span { font-size: clamp(7px, 2vw, 9px); opacity: 0.7; margin-top: 2px; }
+        /* Increased secondary span text sizes */
+        .btn span { font-size: clamp(10px, 2.5vw, 12px); opacity: 0.7; margin-top: 4px; }
 
         .btn-blue { background: var(--btn-blue); box-shadow: 0 5px 0 #0d47a1; }
         .btn-dark { background: var(--btn-dark); box-shadow: 0 5px 0 #000; }
         .btn-orange { background: var(--btn-orange); box-shadow: 0 5px 0 #8c320f; }
 
+        /* Modified to act as a floating popup */
         .state-panel {
-            background: rgba(255,255,255,0.03);
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 600px;
+            background: rgba(18, 21, 20, 0.98);
             border-radius: 12px;
-            padding: clamp(10px, 3vw, 15px);
-            border: 1px solid #333;
+            padding: clamp(15px, 4vw, 25px);
+            border: 2px solid #333;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.9);
+            z-index: 1000;
         }
 
-        .state-title { font-size: 11px; color: #666; margin-bottom: 10px; font-weight: 700; }
+        .state-title { 
+            font-size: 14px; 
+            color: #ccc; 
+            margin-bottom: 15px; 
+            font-weight: 700; 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .close-btn {
+            background: #ff5252;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 10px;
+            cursor: pointer;
+            font-weight: bold;
+        }
 
         #assembly-content {
             font-family: 'JetBrains Mono', monospace;
-            font-size: clamp(11px, 3vw, 13px);
+            font-size: clamp(12px, 3vw, 14px);
             color: #aaa;
             line-height: 1.8;
-            max-height: 250px;
+            max-height: 350px;
             overflow-y: auto;
         }
         
@@ -186,7 +216,7 @@
             display: flex;
             justify-content: space-between;
             border-bottom: 1px solid #222;
-            padding: 2px 4px;
+            padding: 4px 6px;
         }
 
         .asm-active {
@@ -194,9 +224,65 @@
             color: #fff;
             border-radius: 4px;
         }
+
+        /* Overlays for Modals */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 999;
+        }
+
+        /* What's New Popup Styles */
+        #whats-new-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 85%;
+            max-width: 450px;
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid #444;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.9);
+            z-index: 2000;
+            color: #fff;
+        }
+        #whats-new-modal h2 { margin-top: 0; color: var(--btn-blue); font-size: 20px; }
+        #whats-new-modal ul { padding-left: 20px; font-size: 15px; color: #ddd; line-height: 1.6; }
+        #whats-new-modal button { 
+            margin-top: 20px; 
+            width: 100%; 
+            padding: 12px; 
+            background: var(--btn-blue); 
+            color: #fff; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: bold;
+            font-size: 15px;
+        }
+        #whats-new-overlay { z-index: 1999; }
     </style>
 </head>
 <body>
+
+<div class="overlay" id="assembly-overlay" onclick="toggleAssembly()"></div>
+<div class="overlay" id="whats-new-overlay"></div>
+
+<div id="whats-new-modal">
+    <h2>What's New!</h2>
+    <ul>
+        <li><strong>Text sizes increased:</strong> Buttons and labels are now much easier to read on mobile devices.</li>
+        <li><strong>New Display Font:</strong> The main output now mimics a realistic 7-segment LED display.</li>
+        <li><strong>Contextual Data Entry:</strong> The display will now tell you when you need to enter data bytes for a multi-byte instruction!</li>
+        <li><strong>Floating Assembly View:</strong> The Assembly Code screen is now a floating panel, keeping your layout clean.</li>
+    </ul>
+    <button onclick="closeWhatsNew()">AWESOME, LET'S GO!</button>
+</div>
 
 <div class="trainer-case">
     <div class="top-bar">
@@ -258,15 +344,32 @@
                 <button class="btn btn-dark" onclick="hex('3')">3</button>
             </div>
         </div>
-
-        <div class="state-panel" id="machine-code-panel" style="display: none;">
-            <div class="state-title">MACHINE CODE</div>
-            <div id="assembly-content"></div>
-        </div>
     </div>
 </div>
 
+<div class="state-panel" id="machine-code-panel" style="display: none;">
+    <div class="state-title">
+        ASSEMBLY CODE
+        <button class="close-btn" onclick="toggleAssembly()">X</button>
+    </div>
+    <div id="assembly-content"></div>
+</div>
+
 <script>
+    // What's New Logic
+    window.onload = function() {
+        if (!localStorage.getItem('8085_whatsnew_seen_v2')) {
+            document.getElementById('whats-new-overlay').style.display = 'block';
+            document.getElementById('whats-new-modal').style.display = 'block';
+        }
+    };
+
+    function closeWhatsNew() {
+        localStorage.setItem('8085_whatsnew_seen_v2', 'true');
+        document.getElementById('whats-new-overlay').style.display = 'none';
+        document.getElementById('whats-new-modal').style.display = 'none';
+    }
+
     function toggleFullScreen() {
         if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
             if (document.documentElement.requestFullscreen) {
@@ -305,12 +408,10 @@
     let dataBuffer = "";
     let currentAddr = 0x2000;
     let showAssembly = false;
-    
-    // NEW VARIABLES FOR EXTRA BUTTONS
     let currentReg = "";
     let isShifted = false;
 
-const opNames = {
+    const opNames = {
         0x00: 'NOP', 0x01: 'LXI B', 0x02: 'STAX B', 0x03: 'INX B', 0x04: 'INR B', 0x05: 'DCR B', 0x06: 'MVI B', 0x09: 'DAD B', 0x0A: 'LDAX B', 0x0B: 'DCX B', 0x0C: 'INR C', 0x0D: 'DCR C', 0x0E: 'MVI C', 0x0F: 'RRC',
         0x11: 'LXI D', 0x12: 'STAX D', 0x13: 'INX D', 0x14: 'INR D', 0x15: 'DCR D', 0x16: 'MVI D', 0x19: 'DAD D', 0x1A: 'LDAX D', 0x1B: 'DCX D', 0x1C: 'INR E', 0x1D: 'DCR E', 0x1E: 'MVI E', 0x1F: 'RAR',
         0x21: 'LXI H', 0x22: 'SHLD', 0x23: 'INX H', 0x24: 'INR H', 0x25: 'DCR H', 0x26: 'MVI H', 0x29: 'DAD H', 0x2A: 'LHLD', 0x2B: 'DCX H', 0x2C: 'INR L', 0x2D: 'DCR L', 0x2E: 'MVI L', 0x2F: 'CMA',
@@ -330,9 +431,19 @@ const opNames = {
         0xAF: 'XRA A', 0xFE: 'CPI', 0xC3: 'JMP', 0xC6: 'ADI', 0xC9: 'RET', 0xCA: 'JZ', 0xCD: 'CALL', 0xD2: 'JNC', 0xD6: 'SUI',
         0xE6: 'ANI', 0xF6: 'ORI', 0xC5: 'PUSH B', 0xC1: 'POP B', 0xD5: 'PUSH D', 0xD1: 'POP D', 0xE5: 'PUSH H', 0xE1: 'POP H', 0xF5: 'PUSH PSW', 0xF1: 'POP PSW'
     };
+
+    // Helper to determine instruction length for hinting logic
+    function getInstructionLength(op) {
+        if ([0x01, 0x11, 0x21, 0x31, 0x32, 0x3A, 0x22, 0x2A, 0xC3, 0xCA, 0xC2, 0xDA, 0xD2, 0xCD, 0xCC, 0xD4, 0xC4, 0xDC, 0xE4, 0xEC, 0xF4, 0xFC].includes(op)) return 3;
+        if ((op & 0xC7) === 0x06) return 2; 
+        if ([0xC6, 0xD6, 0xE6, 0xF6, 0xCE, 0xDE, 0xEE, 0xFE, 0xDB, 0xD3].includes(op)) return 2;
+        return 1;
+    }
+
     function toggleAssembly() {
         showAssembly = !showAssembly;
         document.getElementById('machine-code-panel').style.display = showAssembly ? 'block' : 'none';
+        document.getElementById('assembly-overlay').style.display = showAssembly ? 'block' : 'none';
         if (showAssembly) renderAssembly();
     }
 
@@ -377,10 +488,36 @@ const opNames = {
             let d = dataBuffer !== "" ? dataBuffer.padStart(2, "0") : ram[currentAddr].toString(16).toUpperCase().padStart(2, "0");
             led.innerText = `${a}  ${d}`;
             let opHex = ram[currentAddr];
-            hud.innerText = shiftStatus + `EDITING MEMORY | MNEMONIC: ${opNames[opHex] || "--"}`;
-        } 
-        // --- NEW UPDATE LOGIC ---
-        else if (state === "REG_WAIT") {
+
+            // --- Determine if the current address expects Data for an Instruction ---
+            let curr = 0x2000;
+            let isData = false;
+            let parentOp = null;
+            let byteNum = 0;
+            
+            while (curr <= currentAddr && curr < 0xFFFF) {
+                let op = ram[curr];
+                let len = getInstructionLength(op);
+                if (curr === currentAddr) {
+                    isData = false;
+                    break;
+                }
+                if (currentAddr < curr + len) {
+                    isData = true;
+                    parentOp = op;
+                    byteNum = currentAddr - curr; 
+                    break;
+                }
+                curr += len;
+            }
+
+            if (isData) {
+                hud.innerText = shiftStatus + `ENTER DATA (BYTE ${byteNum}) FOR ${opNames[parentOp] || "OP"}`;
+            } else {
+                hud.innerText = shiftStatus + `EDITING MEMORY | MNEMONIC: ${opNames[opHex] || "--"}`;
+            }
+
+        } else if (state === "REG_WAIT") {
             led.innerText = "rE6   .";
             hud.innerText = shiftStatus + "PRESS HEX KEY TO SELECT REGISTER (A,B,C,D,E,F,4=PCH,5=PCL)";
         } else if (state === "REG_EDIT") {
@@ -429,9 +566,7 @@ const opNames = {
             dataBuffer += v;
             if (dataBuffer.length > 2) dataBuffer = dataBuffer.slice(-2);
             ram[currentAddr] = parseInt(dataBuffer, 16);
-        } 
-        // --- NEW HEX LOGIC ---
-        else if (state === "REG_WAIT") {
+        } else if (state === "REG_WAIT") {
             const validRegs = ['A','B','C','D','E','F','4','5','6','7'];
             if (validRegs.includes(v)) {
                 currentReg = v;
@@ -457,7 +592,6 @@ const opNames = {
     }
 
     function op(cmd) {
-        // --- YOUR EXISTING WORKING LOGIC ---
         if (cmd === 'RESET') {
             state = "BOOT";
             addrBuffer = "";
@@ -489,9 +623,7 @@ const opNames = {
                 update();
                 setTimeout(() => alert("EXECUTION COMPLETE. Press REL EXMEM to check results."), 100);
             }
-        } 
-        // --- NEW BUTTON LOGIC ---
-        else if (cmd === 'SHIFT') {
+        } else if (cmd === 'SHIFT') {
             isShifted = !isShifted;
         } else if (cmd === 'EXREG') {
             state = "REG_WAIT";
@@ -521,15 +653,14 @@ const opNames = {
 
     function runProgram(start) {
         cpu.pc = start;
-        cpu.cy = 0; cpu.z = 0; cpu.s = 0; cpu.p = 0; // Initialize all flags
+        cpu.cy = 0; cpu.z = 0; cpu.s = 0; cpu.p = 0; 
         let limit = 0;
 
-        // HELPER FUNCTIONS FOR CLEAN EXECUTION
         const getReg = (code) => {
             if (code === 0) return cpu.b; if (code === 1) return cpu.c;
             if (code === 2) return cpu.d; if (code === 3) return cpu.e;
             if (code === 4) return cpu.h; if (code === 5) return cpu.l;
-            if (code === 6) return ram[(cpu.h << 8) | cpu.l]; // M Register
+            if (code === 6) return ram[(cpu.h << 8) | cpu.l]; 
             if (code === 7) return cpu.a;
         };
         const setReg = (code, val) => {
@@ -537,7 +668,7 @@ const opNames = {
             if (code === 0) cpu.b = val; else if (code === 1) cpu.c = val;
             else if (code === 2) cpu.d = val; else if (code === 3) cpu.e = val;
             else if (code === 4) cpu.h = val; else if (code === 5) cpu.l = val;
-            else if (code === 6) ram[(cpu.h << 8) | cpu.l] = val; // M Register
+            else if (code === 6) ram[(cpu.h << 8) | cpu.l] = val; 
             else if (code === 7) cpu.a = val;
         };
         const updateFlags = (val) => {
@@ -553,19 +684,17 @@ const opNames = {
             let l = ram[cpu.sp++]; let h = ram[cpu.sp++]; return {h, l};
         };
         
-        while(limit < 50000) { // Increased limit for larger programs
+        while(limit < 50000) { 
             let currOp = ram[cpu.pc++];
             
-            if (currOp === 0x76) { // HLT
+            if (currOp === 0x76) { 
                 break;
             } 
-            // DYNAMIC DECODING FOR MOV INSTRUCTIONS (0x40 to 0x7F)
             else if (currOp >= 0x40 && currOp <= 0x7F && currOp !== 0x76) {
                 let dest = (currOp >> 3) & 0x07;
                 let src = currOp & 0x07;
                 setReg(dest, getReg(src));
             }
-            // DYNAMIC DECODING FOR ADD INSTRUCTIONS (0x80 to 0x87)
             else if (currOp >= 0x80 && currOp <= 0x87) {
                 let src = currOp & 0x07;
                 let sum = cpu.a + getReg(src);
@@ -573,7 +702,6 @@ const opNames = {
                 cpu.a = sum & 0xFF;
                 updateFlags(cpu.a);
             }
-            // DYNAMIC DECODING FOR SUB INSTRUCTIONS (0x90 to 0x97)
             else if (currOp >= 0x90 && currOp <= 0x97) {
                 let src = currOp & 0x07;
                 let diff = cpu.a - getReg(src);
@@ -581,77 +709,72 @@ const opNames = {
                 cpu.a = diff & 0xFF;
                 updateFlags(cpu.a);
             }
-            // DYNAMIC DECODING FOR MVI INSTRUCTIONS (Ends in 6 or E)
             else if ((currOp & 0xC7) === 0x06) {
                 let dest = (currOp >> 3) & 0x07;
                 setReg(dest, ram[cpu.pc++]);
             }
-            // DYNAMIC DECODING FOR INR INSTRUCTIONS (Ends in 4 or C)
             else if ((currOp & 0xC7) === 0x04) {
                 let dest = (currOp >> 3) & 0x07;
                 let val = (getReg(dest) + 1) & 0xFF;
                 setReg(dest, val);
                 updateFlags(val);
             }
-            // DYNAMIC DECODING FOR DCR INSTRUCTIONS (Ends in 5 or D)
             else if ((currOp & 0xC7) === 0x05) {
                 let dest = (currOp >> 3) & 0x07;
                 let val = (getReg(dest) - 1) & 0xFF;
                 setReg(dest, val);
                 updateFlags(val);
             }
-
-            // --- SPECIFIC HARDCODED OPCODES ---
-            else if (currOp === 0x00) { // NOP
+            else if (currOp === 0x00) { 
                 continue;
-            } else if (currOp === 0x3A) { // LDA
+            } else if (currOp === 0x3A) { 
                 let l = ram[cpu.pc++]; let h = ram[cpu.pc++];
                 cpu.a = ram[(h << 8) | l];
-            } else if (currOp === 0x32) { // STA
+            } else if (currOp === 0x32) { 
                 let l = ram[cpu.pc++]; let h = ram[cpu.pc++];
                 ram[(h << 8) | l] = cpu.a;
-            } else if (currOp === 0xC3) { // JMP
+            } else if (currOp === 0xC3) { 
                 let l = ram[cpu.pc++]; let h = ram[cpu.pc++];
                 cpu.pc = (h << 8) | l;
-            } else if (currOp === 0xCA) { // JZ (Jump if Zero)
+            } else if (currOp === 0xCA) { 
                 let l = ram[cpu.pc++]; let h = ram[cpu.pc++];
                 if (cpu.z === 1) cpu.pc = (h << 8) | l;
-            } else if (currOp === 0xC2) { // JNZ (Jump if Not Zero)
+            } else if (currOp === 0xC2) { 
                 let l = ram[cpu.pc++]; let h = ram[cpu.pc++];
                 if (cpu.z === 0) cpu.pc = (h << 8) | l;
-            } else if (currOp === 0xD2) { // JNC (Jump if No Carry)
+            } else if (currOp === 0xD2) { 
                 let l = ram[cpu.pc++]; let h = ram[cpu.pc++];
                 if (cpu.cy === 0) cpu.pc = (h << 8) | l;
-            } else if (currOp === 0xDA) { // JC (Jump if Carry)
+            } else if (currOp === 0xDA) { 
                 let l = ram[cpu.pc++]; let h = ram[cpu.pc++];
                 if (cpu.cy === 1) cpu.pc = (h << 8) | l;
-            } else if (currOp === 0xCD) { // CALL
+            } else if (currOp === 0xCD) { 
                 let l = ram[cpu.pc++]; let h = ram[cpu.pc++];
                 push((cpu.pc >> 8) & 0xFF, cpu.pc & 0xFF);
                 cpu.pc = (h << 8) | l;
-            } else if (currOp === 0xC9) { // RET
+            } else if (currOp === 0xC9) { 
                 let p = pop();
                 cpu.pc = (p.h << 8) | p.l;
-            } else if (currOp === 0x01) { // LXI B
+            } else if (currOp === 0x01) { 
                 cpu.c = ram[cpu.pc++]; cpu.b = ram[cpu.pc++];
-            } else if (currOp === 0x11) { // LXI D
+            } else if (currOp === 0x11) { 
                 cpu.e = ram[cpu.pc++]; cpu.d = ram[cpu.pc++];
-            } else if (currOp === 0x21) { // LXI H
+            } else if (currOp === 0x21) { 
                 cpu.l = ram[cpu.pc++]; cpu.h = ram[cpu.pc++];
-            } else if (currOp === 0xC6) { // ADI
+            } else if (currOp === 0xC6) { 
                 let sum = cpu.a + ram[cpu.pc++];
                 cpu.cy = (sum > 255) ? 1 : 0;
                 cpu.a = sum & 0xFF;
                 updateFlags(cpu.a);
-            } else if (currOp === 0xD6) { // SUI
+            } else if (currOp === 0xD6) { 
                 let diff = cpu.a - ram[cpu.pc++];
                 cpu.cy = (diff < 0) ? 1 : 0;
                 cpu.a = diff & 0xFF;
                 updateFlags(cpu.a);
-            } else if (currOp === 0xE6) { // ANI
+            } else if (currOp === 0xE6) { 
                 cpu.a = cpu.a & ram[cpu.pc++];
                 cpu.cy = 0; updateFlags(cpu.a);
-            } else if (currOp === 0xFE) { // CPI
+            } else if (currOp === 0xFE) { 
                 let diff = cpu.a - ram[cpu.pc++];
                 cpu.cy = (diff < 0) ? 1 : 0;
                 updateFlags(diff & 0xFF);
