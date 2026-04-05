@@ -75,8 +75,21 @@
         }
 
         /* Keypad Grid (Stretches to fill tall screens) */
-        .keypads { display: flex; gap: 10px; flex-grow: 1; min-height: 0; }
-        .grid { display: grid; gap: 6px; flex: 1; grid-auto-rows: 1fr; }
+        /* Keypad Grid (Proportionate & Centered) */
+.keypads { 
+    display: flex; 
+    gap: 10px; 
+    flex-grow: 1; 
+    align-items: center; /* Prevents infinite vertical stretching */
+}
+.grid { 
+    display: grid; 
+    gap: 8px; 
+    flex: 1; 
+    /* Caps button height between 50px and 75px depending on screen */
+    grid-template-rows: repeat(4, minmax(50px, 75px)); 
+    align-content: center; /* Centers the keypad vertically */
+}
         .grid-blue { grid-template-columns: repeat(3, 1fr); }
         .grid-hex { grid-template-columns: repeat(4, 1fr); }
 
